@@ -8,7 +8,7 @@ class SessionsController < ApplicationController
   def create
     @user = User.find_by(email: params[:email])
     if @user && @user.authenticate(params[:password])
-      sessions[:user_id] = @user.id
+      session[:user_id] = @user.id
       render json: { message: "User Authenticated"}, status: :ok
     else
       render json: { message: "Email or password incorrect"}, status: :not_found
@@ -23,5 +23,9 @@ class SessionsController < ApplicationController
 
   private
 
-
+  def user_params
+    params
+    .require(:user)
+    .permit(:email, :password)
+  end
 end
