@@ -1,6 +1,6 @@
 class User < ApplicationRecord
-    has_secure_password
-    has_many :requests
-    has_many :comments
-    enum status: %i[admin agent customer]
+  has_many :requests, dependent: :destroy
+  has_many :comments
+  has_one :user_authentication, dependent: :destroy
+  enum status: %i[admin agent customer]
 end

@@ -14,12 +14,23 @@ gem 'puma', '~> 3.11'
 # Use Redis adapter to run Action Cable in production
 # gem 'redis', '~> 4.0'
 # Use ActiveModel has_secure_password
+
+#For password encryption
 gem 'bcrypt', '~> 3.1.7'
 
+#For debugging
 gem 'pry', '~> 0.12.2'
 # Use ActiveStorage variant
 # gem 'mini_magick', '~> 4.8'
 
+#For searching database with a query
+gem 'ransack'
+
+#Returns neat json for the api
+gem 'fast_jsonapi'
+
+#For pagination
+gem 'will_paginate'
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 
