@@ -29,6 +29,9 @@ gem 'ransack'
 #Returns neat json for the api
 gem 'fast_jsonapi'
 
+#Used for authorization and conditions with policy
+gem "pundit"
+
 #For pagination
 gem 'will_paginate'
 # Use Capistrano for deployment

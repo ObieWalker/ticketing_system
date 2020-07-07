@@ -1,7 +1,7 @@
 class UsersController < ApplicationController
   before_action :authenticate, except: :create
   before_action :admin_auth, only: [:update, :destroy]
-  skip_before_action :authorize, only: [:create], :raise => false
+  skip_before_action :authorize_user, only: [:create], :raise => false
 
   def index
     if user_search?
@@ -37,13 +37,11 @@ class UsersController < ApplicationController
   end
 
   def destroy
-    user = User.find(params[:id])
-    if user.destroy
+    if User.destroy(params[:id])
       render json: { message: "User has been deleted"}, status: :ok
-      return
+    else
+      render json: { message: "Unable to delete user"}, status: :bad_request
     end
-    render json: { message: "Unable to delete user"}, status: :bad_request
-
   end
 
   private
