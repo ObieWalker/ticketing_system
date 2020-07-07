@@ -1,12 +1,14 @@
 class RequestsController < ApplicationController
   before_action :agent_auth, only: [:index, :update, :destroy]
+  before_action :set_request, only: [:update]
+  include Pundit
 
   def index
     if request_search?
-      requests = Request.where(status: params[:status]).ransack(request_title_cont: params[:q]).result.first(5)
+      requests = policy_scope(Request).where(status: params[:status]).ransack(request_title_cont: params[:q]).result.first(5)
       render json: RequestSerializer.new(requests)
     else
-      requests = Request.where(status: params[:status]).paginate(page: params[:page], per_page: 10)
+      requests = policy_scope(Request).where(status: params[:status]).paginate(page: params[:page], per_page: 10)
       render json: RequestSerializer.new(requests)
     end
   end
@@ -35,6 +37,8 @@ class RequestsController < ApplicationController
     else
       render json: { message: "Unable to update this request."}, status: :bad_request
     end
+  rescue StandardError => e
+    render json: { message: 'You cannot modify this request.' }, status: :unauthorized
   end
 
   private
@@ -74,8 +78,10 @@ class RequestsController < ApplicationController
   end
 
   def request_type
-    if update_params[:agent_assigned].present? || update_params[:agent_assigned].blank?
+    if update_params[:agent_assigned].present?
       "Agent assigned."
+    elsif update_params[:agent_assigned].blank?
+      "Agent removed."
     else
       "Status changed."
     end
@@ -87,5 +93,10 @@ class RequestsController < ApplicationController
       request_title: request_params[:request_title],
       request_body: request_params[:request_body]
     }
+  end
+
+  def set_request
+    request = Request.find(params[:id])
+    authorize request
   end
 end
