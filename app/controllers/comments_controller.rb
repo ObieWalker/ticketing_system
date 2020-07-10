@@ -1,36 +1,37 @@
 class CommentsController < ApplicationController
   before_action :authenticate
+  before_action :check_comment_params, only: :create
   before_action :authorize_comment, only: :create
   before_action :set_comment, only: [:update, :destroy]
   include Pundit
 
   def create
-    comment = Comment.create(create_params)
+    comment = Comment.create!(create_params)
     if comment
-      render json: comment, status: :ok
+      json_response(comment)
     else
-      render json: { message: "Unable to comment at this time."}, status: :bad_request
+      json_response({ message: "Unable to comment at this time."}, status = :bad_request)
     end
   end
 
   def update
     if Comment.update(params[:id], comment_attributes)
-      render json: { message: "comment updated."}, status: :ok
+      json_response({message: "comment updated."})
     else
-      render json: { message: "Unable to update this comment."}, status: :bad_request
+      json_response({ message: "Unable to update this comment."}, status = :bad_request)
     end
   rescue StandardError => e
-    render json: { message: 'You are not allowed to update' }, status: :unauthorized
+    json_response({ message: 'You are not allowed to update' }, status = :unauthorized)
   end
 
   def destroy
     if Comment.destroy(params[:id])
-      render json: { message: "Comment has been deleted"}, status: :ok
+      json_response({message: "Comment has been deleted"})
     else
-      render json: { message: "Unable to delete comment."}, status: :bad_request
+      json_response({ message: "Unable to delete comment."}, status = :bad_request)
     end
   rescue StandardError => e
-    render json: { message: 'You are not allowed to delete this comment.'}, status: :unauthorized
+    json_response({ message: 'You are not allowed to delete this comment.' }, status = :unauthorized)
   end
 
   private

@@ -1,11 +1,9 @@
 class UserAuthentication < ApplicationRecord
   has_secure_password
-
   belongs_to :user
-
-  def token_expired?
-    token_expire_date < DateTime.now
-  end
+  validates_presence_of :user
+  validates_presence_of :email
+  validates_presence_of :password_digest
 
   def self.generate_token_params
     {
