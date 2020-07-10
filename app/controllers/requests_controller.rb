@@ -1,4 +1,5 @@
 class RequestsController < ApplicationController
+  before_action :authenticate
   before_action :agent_auth, only: [:index, :update, :destroy]
   before_action :set_request, only: [:update]
   include Pundit
@@ -6,39 +7,41 @@ class RequestsController < ApplicationController
   def index
     if request_search?
       requests = policy_scope(Request).where(status: params[:status]).ransack(request_title_cont: params[:q]).result.first(5)
-      render json: RequestSerializer.new(requests)
+      json_response(RequestSerializer.new(requests))
     else
       requests = policy_scope(Request).where(status: params[:status]).paginate(page: params[:page], per_page: 10)
-      render json: RequestSerializer.new(requests)
+      json_response(RequestSerializer.new(requests))
     end
   end
 
   def create
     request = Request.create(request_attributes)
     if request
-      render json: request, status: :ok
+      json_response(request)
     else
-      render json: { message: "Unable to create request."}, status: :bad_request
+      json_response({ message: "Unable to create request."}, status = :bad_request)
     end
   end
 
   def show
-    request = Request.find(params[:id])
+    request = policy_scope(Request).find(params[:id])
     if request
-      render json: RequestSerializer.new(request), status: :created
+      json_response(RequestSerializer.new(request))
     else
-      render json: { message: "Unable to get request."}, status: :bad_request
+      json_response({ message: "Unable to get request."}, status = :bad_request)
     end
+  rescue StandardError => e
+    json_response({ message: 'You cannot get this request.' }, status = :unauthorized)
   end
 
   def update
     if Request.update(params[:id], attribute)
-      render json: { message: "#{request_type}"}, status: :ok
+      json_response({ message: "#{request_type}"})
     else
-      render json: { message: "Unable to update this request."}, status: :bad_request
+      json_response({ message: "Unable to update this request."}, status = :bad_request)
     end
   rescue StandardError => e
-    render json: { message: 'You cannot modify this request.' }, status: :unauthorized
+    json_response({ message: 'You cannot modify this request.' }, status = :unauthorized)
   end
 
   private
@@ -60,10 +63,10 @@ class RequestsController < ApplicationController
       update_params[:status] == 2 ?
       {
         "closed_date": DateTime.now,
-        "status": update_params[:status]
+        "status": update_params[:status].to_i
       } :
       {
-        "status": update_params[:status],
+        "status": update_params[:status].to_i,
         "agent_assigned": update_params[:agent_assigned] || current_user.id
       }
     else
@@ -78,12 +81,12 @@ class RequestsController < ApplicationController
   end
 
   def request_type
-    if update_params[:agent_assigned].present?
-      "Agent assigned."
-    elsif update_params[:agent_assigned].blank?
-      "Agent removed."
-    else
+    if update_params[:agent_assigned].present? && update_params[:status].present?
+      "Agent assigned and status changed."
+    elsif update_params[:status].present?
       "Status changed."
+    else
+      "Agent removed."
     end
   end
 

@@ -1,15 +1,14 @@
 class UsersController < ApplicationController
-  before_action :authenticate, except: :create
+  before_action :authenticate, except: [:create]
   before_action :admin_auth, only: [:update, :destroy]
-  skip_before_action :authorize_user, only: [:create], :raise => false
 
   def index
     if user_search?
       users = User.paginate(page: params[:page], per_page: 10)
-      render json: UserSerializer.new(users)
+      json_response(UserSerializer.new(users))
     else
       users = User.ransack(username_or_email_cont: params[:q]).result.first(5)
-      render json: UserSerializer.new(users)
+      json_response(UserSerializer.new(users))
     end
   end
 
@@ -17,30 +16,29 @@ class UsersController < ApplicationController
     if unique_email?
       @user = User.create(user_params)
       if @user && auth_params
-        session[:user_id] = @user.id
-        render json: { message: "User Created", token: @user.user_authentication.token}, status: :created
+        json_response({ message: "User Created", token: auth_params.token}, status = :created)
         return
       end
-      render :json => error_payload, :status => :bad_request
+      json_response({error: "There was an error signing up."}, status = :bad_request)
     else
-      render json: { message: "Account already exists"}, status: :bad_request
+      json_response({message: "Account already exists"}, status = :bad_request)
     end
   end
 
   def update
     user = User.find(params[:id])
     if user.update_attributes(role: update_params[:role])
-      render json: { message: "User has been updated"}, status: :ok
+      json_response({ message: "User has been updated"})
     else
-      render json: { message: "User cannot be updated"}, status: :bad_request
+      json_response({ message: "User cannot be updated"}, status = :bad_request)
     end
   end
 
   def destroy
     if User.destroy(params[:id])
-      render json: { message: "User has been deleted"}, status: :ok
+      json_response({ message: "User has been deleted"})
     else
-      render json: { message: "Unable to delete user"}, status: :bad_request
+      json_response({ message: "Unable to delete user"}, status = :bad_request)
     end
   end
 
@@ -68,13 +66,6 @@ class UsersController < ApplicationController
   def update_params
     params
     .permit(:id, :role)
-  end
-  
-  def error_payload
-    {
-      error: "There was an error signing up.",
-      status: 400
-    }
   end
 
   def unique_email?
