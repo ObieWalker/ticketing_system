@@ -18,6 +18,8 @@ gem 'puma', '~> 3.11'
 #For password encryption
 gem 'bcrypt', '~> 3.1.7'
 
+#Environment variables
+gem 'dotenv-rails'
 #For debugging
 gem 'pry', '~> 0.12.2'
 # Use ActiveStorage variant
