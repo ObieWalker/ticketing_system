@@ -1,0 +1,90 @@
+# Use the latest stable version of Semaphore 2.0 YML syntax:
+version: v1.0
+
+
+name: Ticket_managing_app
+
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu1804
+
+blocks:
+  - name: Setup
+    dependencies: []
+    task:
+      jobs:
+        - name: bundle
+          commands:
+          - checkout
+          - cache restore
+          - sem-version ruby 2.5.1
+          - bundle install --deployment -j 4 --path vendor/bundle
+          - cache store
+
+  - name: Code scanning
+    dependencies:
+      - Setup
+    task:
+      jobs:
+        - name: check style + security
+          commands:
+            - checkout
+            - cache restore
+            - sem-version ruby 2.5.1
+            - bundle install --deployment --path vendor/bundle
+            - bundle exec rubocop
+            - bundle exec brakeman
+
+  - name: Unit tests
+    dependencies:
+      - Code scanning
+    task:
+      prologue:
+        commands:
+          - checkout
+          - cache restore
+          - sem-service start mysql
+          - sem-version ruby 2.5.1
+          - bundle install --deployment --path vendor/bundle
+          - bundle exec rake db:setup
+
+      jobs:
+      - name: RSpec - model tests
+        commands:
+          - bundle exec rspec spec/models
+
+      - name: RSpec - controller tests
+        commands:
+          - bundle exec rspec spec/controllers
+
+  - name: Integration tests
+    dependencies:
+      - Unit tests
+    task:
+      prologue:
+        commands:
+          - checkout
+          - cache restore
+          - sem-service start mysql
+          - sem-version ruby 2.5.1
+          - bundle install --deployment --path vendor/bundle
+          - bundle exec rake db:setup
+
+      jobs:
+      - name: RSpec - feature specs
+        commands:
+          - bundle exec rspec spec/features
+  - name: 'MySQL smoke test'
+    dependencies: []
+    task:
+      jobs:
+        - name: 'Build with MySQL'
+          commands:
+            - checkout
+            - cache restore
+            - sem-service start mysql
+            - bundle install --deployment --path vendor/bundle
+            - cp config/database.yml.mysql config/database.yml
+            - bundle exec rake db:setup
+            - bundle exec rspec spec/models
