@@ -1,90 +1,63 @@
-# Use the latest stable version of Semaphore 2.0 YML syntax:
 version: v1.0
-
-
-name: Ticket_managing_app
-
+name: First pipeline example
 agent:
   machine:
     type: e1-standard-2
     os_image: ubuntu1804
 
 blocks:
-  - name: Setup
-    dependencies: []
+  - name: "Build"
     task:
+      env_vars:
+        - name: APP_ENV
+          value: prod
       jobs:
-        - name: bundle
-          commands:
-          - checkout
-          - cache restore
-          - sem-version ruby 2.5.1
-          - bundle install --deployment -j 4 --path vendor/bundle
-          - cache store
-
-  - name: Code scanning
-    dependencies:
-      - Setup
-    task:
-      jobs:
-        - name: check style + security
-          commands:
-            - checkout
-            - cache restore
-            - sem-version ruby 2.5.1
-            - bundle install --deployment --path vendor/bundle
-            - bundle exec rubocop
-            - bundle exec brakeman
-
-  - name: Unit tests
-    dependencies:
-      - Code scanning
-    task:
-      prologue:
+      - name: Docker build
         commands:
           - checkout
-          - cache restore
-          - sem-service start mysql
-          - sem-version ruby 2.5.1
-          - bundle install --deployment --path vendor/bundle
-          - bundle exec rake db:setup
+          - ls -1
+          - echo $APP_ENV
+          - echo "Docker build..."
+          - echo "done"
 
-      jobs:
-      - name: RSpec - model tests
-        commands:
-          - bundle exec rspec spec/models
-
-      - name: RSpec - controller tests
-        commands:
-          - bundle exec rspec spec/controllers
-
-  - name: Integration tests
-    dependencies:
-      - Unit tests
+  - name: "Smoke tests"
     task:
-      prologue:
+      jobs:
+      - name: Smoke
         commands:
           - checkout
-          - cache restore
-          - sem-service start mysql
-          - sem-version ruby 2.5.1
-          - bundle install --deployment --path vendor/bundle
-          - bundle exec rake db:setup
+          - echo "make smoke"
 
-      jobs:
-      - name: RSpec - feature specs
-        commands:
-          - bundle exec rspec spec/features
-  - name: 'MySQL smoke test'
-    dependencies: []
+  - name: "Unit tests"
     task:
       jobs:
-        - name: 'Build with MySQL'
-          commands:
-            - checkout
-            - cache restore
-            - sem-service start mysql
-            - bundle install --deployment --path vendor/bundle
-            - cp config/database.yml.mysql config/database.yml
-            - bundle exec rake db:setup
-            - bundle exec rspec spec/models
+      - name: RSpec
+        commands:
+          - checkout
+          - echo "make rspec"
+
+      - name: Lint code
+        commands:
+          - checkout
+          - echo "make lint"
+
+      - name: Check security
+        commands:
+          - checkout
+          - echo "make security"
+
+  - name: "Integration tests"
+    task:
+      jobs:
+      - name: Cucumber
+        commands:
+          - checkout
+          - echo "make cucumber"
+
+  - name: "Push Image"
+    task:
+      jobs:
+      - name: Push
+        commands:
+          - checkout
+          - echo "make docker.push"
