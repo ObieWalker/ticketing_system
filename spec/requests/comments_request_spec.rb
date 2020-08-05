@@ -18,7 +18,7 @@ RSpec.describe "Comments", type: :request do
       post "/comments", :params => comment_params, :headers => headers
 
       expect(response.content_type).to eq("application/json")
-      expect(response).to have_http_status(:ok)
+      expect(response).to have_http_status(:created)
     end
 
     it "fails to create a new comment" do
@@ -79,7 +79,7 @@ RSpec.describe "Comments", type: :request do
       post "/comments", :params => comment_params, :headers => headers
 
       expect(response.content_type).to eq("application/json")
-      expect(response).to have_http_status(:ok)
+      expect(response).to have_http_status(:created)
     end
 
     it "restricts creating a new comment as a customer before an agent" do
