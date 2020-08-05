@@ -26,18 +26,6 @@ RSpec.describe "Requests", type: :request do
       expect(response.content_type).to eq("application/json")
       expect(response).to have_http_status(:ok)
     end
-
-    it "fails to requests as a customer" do
-      @user1 = create(:user, role: 2)
-      @user_auth1 = create(:user_authentication, user: @user1)
-      @request1 = create(:request, user: @user1)
-
-      headers = { "ACCEPT" => "application/json", "token" => @user_auth1.token }
-      get "/requests?status=0", :headers => headers
-
-      expect(response.content_type).to eq("application/json")
-      expect(response).to have_http_status(:unauthorized)
-    end
   end
 
   context 'CREATE #requests' do
@@ -54,7 +42,7 @@ RSpec.describe "Requests", type: :request do
       post "/requests", :params => request_params, :headers => headers
 
       expect(response.content_type).to eq("application/json")
-      expect(response).to have_http_status(:ok)
+      expect(response).to have_http_status(:created)
     end
   end
 
@@ -74,16 +62,15 @@ RSpec.describe "Requests", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "returns a request for a customer" do
+    it "returns unauthorized for a monthyl CSV for a customer" do
       @user1 = create(:user, role: 2)
       @user_auth1 = create(:user_authentication, user: @user1)
-      @request1 = create(:request, user: @user1)
 
       headers = { "ACCEPT" => "application/json", "token" => @user_auth1.token }
-      get "/requests/#{@request1.id}", :headers => headers
+      get "/requests/id", :headers => headers
 
       expect(response.content_type).to eq("application/json")
-      expect(response).to have_http_status(:ok)
+      expect(response).to have_http_status(:unauthorized)
     end
 
     it "fails request for a customer" do

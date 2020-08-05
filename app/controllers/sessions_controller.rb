@@ -5,7 +5,7 @@ class SessionsController < ApplicationController
     user = UserAuthentication.find_by(email: user_params[:email])
     if user && user.authenticate(user_params[:password])
       user.update(UserAuthentication.generate_token_params)
-      json_response({ message: "User Authenticated", token: user.token })
+      json_response(SessionSerializer.new(user))
     else
       json_response({ message: "Email or password incorrect"}, status = :not_found)
     end

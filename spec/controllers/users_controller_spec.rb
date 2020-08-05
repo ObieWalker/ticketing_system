@@ -10,7 +10,7 @@ RSpec.describe UsersController, type: :controller do
       expect(response.message).to eq "Bad Request"
       expect(response.status).to eq 400
     end
-    it 'returns a bad request response' do
+    it 'returns a created response' do
       post :create, :params => { :user => { :username => 'different_user', :email => 'different@gmail.com'}, :format => :json }
       expect(response.message).to eq "Created"
       expect(response.status).to eq 201

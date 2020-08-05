@@ -1,34 +1,34 @@
 class RequestsController < ApplicationController
   before_action :authenticate
-  before_action :agent_auth, only: [:index, :update, :destroy]
+  before_action :agent_auth, only: [:update, :destroy, :show]
   before_action :set_request, only: [:update]
   include Pundit
 
   def index
     if request_search?
-      requests = policy_scope(Request).where(status: params[:status]).ransack(request_title_cont: params[:q]).result.first(5)
-      json_response(RequestSerializer.new(requests))
+      requests = searchCondition
+        json_response(RequestSerializer.new(requests, set_total(requests)))
     else
-      requests = policy_scope(Request).where(status: params[:status]).paginate(page: params[:page], per_page: 10)
-      json_response(RequestSerializer.new(requests))
+      requests = queryCondition
+      json_response(RequestSerializer.new(requests, set_total(requests)))
     end
   end
 
   def create
     request = Request.create(request_attributes)
     if request
-      json_response(request)
+      json_response(request, status = :created)
     else
       json_response({ message: "Unable to create request."}, status = :bad_request)
     end
   end
 
   def show
-    request = policy_scope(Request).find(params[:id])
+    request = policy_scope(Request).monthly_export
     if request
       json_response(RequestSerializer.new(request))
     else
-      json_response({ message: "Unable to get request."}, status = :bad_request)
+      json_response({ message: "There are no closed requests in the last month."}, status = :bad_request)
     end
   rescue StandardError => e
     json_response({ message: 'You cannot get this request.' }, status = :unauthorized)
@@ -76,6 +76,12 @@ class RequestsController < ApplicationController
     end
   end
 
+  def set_total(requests)
+    options = {}
+    options[:meta] = {total: requests.total_entries}
+    options
+  end
+
   def request_search?
     params[:q].present?
   end
@@ -101,5 +107,26 @@ class RequestsController < ApplicationController
   def set_request
     request = Request.find(params[:id])
     authorize request
+  end
+
+  def queryCondition
+    if params[:status].empty?
+      policy_scope(Request).get_all.paginate(
+        page: params[:page], per_page: 5)
+    else
+      policy_scope(Request).where(status: params[:status]).paginate(
+        page: params[:page], per_page: 5)
+    end
+  end
+
+  def searchCondition
+    if params[:status].empty?
+    policy_scope(Request).get_all.ransack(request_title_cont: params[:q])
+    .result.paginate(page: params[:page], per_page: 5)
+    else
+      policy_scope(Request).where(
+        status: params[:status]).ransack(request_title_cont: params[:q])
+        .result.paginate(page: params[:page], per_page: 5)
+    end
   end
 end

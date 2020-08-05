@@ -7,4 +7,6 @@ class Request < ApplicationRecord
     enum status: %i[unresponded opened closed]
     attribute :status, :integer, default: 0
 
+    scope :monthly_export, -> { where("closed_date > ?", 1.month.ago)}
+    scope :get_all, -> { where.not(:status => nil)}
 end

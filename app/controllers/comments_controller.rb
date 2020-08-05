@@ -5,13 +5,23 @@ class CommentsController < ApplicationController
   before_action :set_comment, only: [:update, :destroy]
   include Pundit
 
-  def create
-    comment = Comment.create!(create_params)
-    if comment
-      json_response(comment)
+  def index 
+    comments = Comment.where(request_id: params[:request_id]).order('created_at ASC')
+    if comments
+      json_response(comments)
     else
-      json_response({ message: "Unable to comment at this time."}, status = :bad_request)
+      json_response({ message: "There are no comments on this request."}, status = :not_found)
     end
+  end
+
+  def create
+    comment, request =
+      ActiveRecord::Base.transaction do
+        [createComment, setRequestStatus]
+      end
+    json_response(comment, status = :created)
+  rescue StandardError => e
+    json_response({ message: 'There was a problem adding this comment.' }, status = :bad_request)
   end
 
   def update
@@ -56,8 +66,31 @@ class CommentsController < ApplicationController
     }
   end
 
+  def setRequestStatus
+    Request.update(comment_params[:request_id], status: 1)
+  end
+
   def set_comment
     comment = Comment.find(params[:id])
     authorize comment
+  end
+
+  def createComment
+    Comment.create(create_params)
+  end
+
+  def authorize_comment
+    first_request_comment = Comment.where(request_id: params[:comment]["request_id"]).empty?
+    if current_user.role == 2 && first_request_comment
+      json_response({message: "Unauthorized action."}, status = :unauthorized)
+      return
+    end
+  end
+
+  def check_comment_params
+    if params[:comment].nil? || params[:comment]["request_id"].nil? || params[:comment]["comment"].nil?
+      json_response({message: "Check user parameters."}, status = :bad_request)
+      return
+    end
   end
 end

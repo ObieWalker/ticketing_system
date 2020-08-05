@@ -4,24 +4,29 @@ class UsersController < ApplicationController
 
   def index
     if user_search?
-      users = User.paginate(page: params[:page], per_page: 10)
-      json_response(UserSerializer.new(users))
+      users = User.paginate(page: params[:page], per_page: 5)
+      json_response(UserSerializer.new(users, set_total(users)))
     else
-      users = User.ransack(username_or_email_cont: params[:q]).result.first(5)
-      json_response(UserSerializer.new(users))
+      users = User.ransack(username_or_email_cont: params[:q]).result.paginate(page: params[:page], per_page: 5)
+      json_response(UserSerializer.new(users, set_total(users)))
     end
   end
 
   def create
     if unique_email?
-      @user = User.create(user_params)
-      if @user && auth_params
-        json_response({ message: "User Created", token: auth_params.token}, status = :created)
-        return
-      end
-      json_response({error: "There was an error signing up."}, status = :bad_request)
+      json_response(SessionSerializer.new(create_user), status = :created)
     else
       json_response({message: "Account already exists"}, status = :bad_request)
+    end
+  rescue StandardError => e
+    json_response({message: "There was an error signing up."}, status = :bad_request)
+  end
+
+  def show
+    unless current_user.nil?
+      json_response(SessionSerializer.new(current_user.user_authentication))
+    else
+      json_response({message: "Unable to get user"}, status = :bad_request)
     end
   end
 
@@ -56,9 +61,18 @@ class UsersController < ApplicationController
     .permit(:email, :password)
   end
 
-  def auth_params
+  def create_user
+    user = 
+    ActiveRecord::Base.transaction do
+      user = User.create!(user_params)
+      auth_params(user)
+    end
+    user
+  end
+
+  def auth_params(user)
     token_params = UserAuthentication.generate_token_params
-    auth_values = signup_params.merge(user_id: @user.id)
+    auth_values = signup_params.merge(user_id: user.id)
     auth_values = auth_values.merge(token_params)
     UserAuthentication.create(auth_values)
   end
@@ -74,5 +88,11 @@ class UsersController < ApplicationController
 
   def user_search?
     params[:q].nil?
+  end
+
+  def set_total(users)
+    options = {}
+    options[:meta] = {total: users.total_entries}
+    options
   end
 end
