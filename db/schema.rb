@@ -12,7 +12,7 @@
 
 ActiveRecord::Schema.define(version: 2020_07_06_130843) do
 
-  create_table "comments", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "comments", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "user_id"
     t.bigint "request_id"
     t.text "comment"
@@ -22,7 +22,7 @@ ActiveRecord::Schema.define(version: 2020_07_06_130843) do
     t.index ["user_id"], name: "index_comments_on_user_id"
   end
 
-  create_table "requests", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "requests", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "user_id"
     t.text "request_body"
     t.integer "status"
@@ -34,7 +34,7 @@ ActiveRecord::Schema.define(version: 2020_07_06_130843) do
     t.index ["user_id"], name: "index_requests_on_user_id"
   end
 
-  create_table "user_authentications", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "user_authentications", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci", force: :cascade do |t|
     t.bigint "user_id"
     t.string "email"
     t.string "password_digest"
@@ -45,12 +45,11 @@ ActiveRecord::Schema.define(version: 2020_07_06_130843) do
     t.index ["user_id"], name: "index_user_authentications_on_user_id"
   end
 
-  create_table "users", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "users", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci", force: :cascade do |t|
     t.string "username"
     t.string "email"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "role", default: 2
   end
-
 end
