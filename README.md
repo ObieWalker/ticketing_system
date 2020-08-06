@@ -37,6 +37,12 @@ TICKET_APP_DEFAULT_DB_PASSWORD=
 TICKET_APP_DEFAULT_DB_USERNAME=
 ```
 
+-Setup the database with the command
+
+```bash
+rails db:setup
+```
+
 - Next, migrate the database
 
 ```bash
